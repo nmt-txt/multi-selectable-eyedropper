@@ -1,5 +1,7 @@
 # 複数箇所スポイトできる画像カラースポイトツール
 
+![screenshot](./doc/screenshot.png)
+
 工事中
 
 > [!NOTE]
