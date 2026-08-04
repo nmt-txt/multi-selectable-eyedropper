@@ -20,6 +20,9 @@ python main.py
 
 - ズーム?
   - ズーム以外に拡大状態での移動、拡大状態でのクリック位置から該当ピクセルの算出、スポイト位置インジケーターの適切な位置への描画など考えることが多いため実装されそうにありません
+- グレースケール
+  - グレースケール表示、色リスト内での表示ともにITU-R 601-2 luma transformです
+  - `L = R * 299/1000 + G * 587/1000 + B * 114/1000` [(参考(Pillowドキュメント))](https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert)
 - 不足
   - HSV(~255), HSV(%), HSV(360,100)的
   - もう少し良い左右パネルレイアウト
