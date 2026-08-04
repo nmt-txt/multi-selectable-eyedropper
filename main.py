@@ -305,6 +305,9 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
         else :
             color_str += "\n   rgb({:>3},{:>3},{:>3})".format(*item.color.rgb)
 
+        if size != Sizes.M:
+            color_str += "\n   luma({:>3})".format(item.color.luma)
+
     match size:
         # size: [foreground, background]
         case Sizes.XL | Sizes.XXL:
