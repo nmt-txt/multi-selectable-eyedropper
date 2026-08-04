@@ -362,10 +362,10 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
             if size == Sizes.XS:
                 dpg.add_button(label="X", small=True, height=height_px/3) # height /3 not working... why?
             else :
-                dpg.add_button(label="^", small=True, height=height_px/3, callback=on_color_item_reorder, user_data=(item_index, (item_index -1) % len(pickedColorState.items)))
+                dpg.add_button(label="^", small=True, height=height_px/3, callback=on_color_item_reorder, user_data=(item_index,-1))
                 dpg.add_button(label="X", small=True, height=height_px/3, callback=on_color_item_del, user_data=item_index)
                 if size != Sizes.S:
-                    dpg.add_button(label="v", small=True, height=(height_px/3), callback=on_color_item_reorder, user_data=(item_index, (item_index +1) % len(pickedColorState.items)))
+                    dpg.add_button(label="v", small=True, height=(height_px/3), callback=on_color_item_reorder, user_data=(item_index, 1))
     return created
 
 def update_color_list_checkbox():
@@ -440,9 +440,16 @@ def on_color_item_del(sender, app_data, user_data):
 
 def on_color_item_reorder(sender, app_data, user_data):
     # user_data = (index, target).
+    # target: -1=upper, 1=lower
     index = user_data[0]
     target = user_data[1]
-    pickedColorState.swap(index, target)
+    if index == 0 and target == -1:
+        pickedColorState.append(*pickedColorState.pop_at(index))
+    elif index == len(pickedColorState.items)-1 and target == 1:
+        pickedColorState.insert(0, *pickedColorState.pop_at(index))
+    else:
+        pickedColorState.swap(index, (index + target) % len(pickedColorState.items))
+
     reflesh_color_list()
     display_point_indicator()
 

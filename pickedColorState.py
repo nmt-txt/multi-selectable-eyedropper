@@ -19,6 +19,11 @@ def append(item, selected_state):
     selected.append(selected_state)
     return len(items)-1
 
+def insert(at, item, selected_state):
+    items.insert(at, item)
+    selected.insert(at, selected_state)
+    return
+
 def pop_at(index):
     return (items.pop(index), selected.pop(index))
 
