@@ -344,15 +344,18 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
                 dpg.draw_circle((line_x, line_y), circle_radius[1], color=(85,85,85))
                 dpg.draw_circle((line_x, line_y), circle_radius[0], color=(255,255,255))
         with dpg.drawlist(width=20, height=height_px):
+            # 色、luma
             dpg.draw_rectangle((0,0), (10,height_px), color=[45]*3, fill=item.color.rgba)
             dpg.draw_rectangle((10,0), (20,height_px), color=[45]*3, fill=([item.color.luma]*3))
         with dpg.group():
+            # 座標、HEX、色コード
             if size != Sizes.XS:
                 with dpg.group(horizontal=True):
-                    dpg.add_text("@({:>4},{:>4})".format(*item.pos))
+                    dpg.add_text("@({:>4},{:>4})".format(*item.pos), color=(255,255,255, 150))
                     dpg.add_input_text(default_value=item.color.hex, width=50, readonly=True, auto_select_all=True)
             dpg.add_text(f"{color_str}")
         with dpg.group():
+            # 削除、並び替えボタン
             if size == Sizes.XS:
                 dpg.add_button(label="X", small=True, height=height_px/3) # height /3 not working... why?
             else :
