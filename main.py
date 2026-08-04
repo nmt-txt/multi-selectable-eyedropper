@@ -10,7 +10,7 @@ import pickedColorState, imageState, comboItem, colorCircleSquare
 
 dpg.create_context()
 # dpg.show_item_registry()
-dpg.create_viewport(title="Multi-selectable image color eyedropper(MSICE) v0.3", width=800, height=680)
+dpg.create_viewport(title="Multi-selectable image color eyedropper(MSICE) v0.4", width=800, height=680)
 
 # Dear PyGuiのカラーサークルは三角かつ色相の角度が気に入らない
 # このため自作する。サークルは色が変わらないので事前ロードできるが、
@@ -471,7 +471,7 @@ with dpg.window(tag=TagWindow.PRIMARY):#描画スペースの中にwindowを作�
                         dpg.add_button(label="Load", callback=reflesh_loaded_image)
                         dpg.add_text("|") # spacing
                         dpg.add_combo([e.value for e in comboItem.ImageColormode], default_value=comboItem.ImageColormode.COLOR.value, callback=display_image, tag=TagItem.COMBO_IMAGE_COLORMODE, fit_width=True)
-                        dpg.add_text("v0.3", color=[150,200,255], tag=TagItem.TEXT_LOADED_IMAGE_DETAIL)
+                        dpg.add_text("v0.4", color=[150,200,255], tag=TagItem.TEXT_LOADED_IMAGE_DETAIL)
                 with dpg.child_window(tag=TagWindow.IMAGE, border=False) as window_image:
                     with dpg.group(tag=TagGroup.LOADING_INFO):
                         dpg.add_text("To display copied image:\n  - Click the \"Load\" button above\n  - Press Ctrl+V (tips: release V first)\n\n", tag=TagItem.TEXT_LOAD_STAT)
