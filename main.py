@@ -275,10 +275,10 @@ def reflesh_color_list():
     
     for i, item in enumerate(pickedColorState.items):
         square_tex_tag = "" # HLS色空間の場合、使用しないので空文字で良い
-        if selected_format != comboItem.ColorFormat.HLS:
+        if not comboItem.isFormatHLS(selected_format):
             square_tex_tag = f"{TagTexture.COLORCIRCLE_SQUARE_}{i}"
             with dpg.texture_registry():
-                img_np = color_circle_square.get_shifted_hue(item.color.hsv[0])
+                img_np = color_circle_square.get_shifted_hue(item.color.get_value("hsv", 255)[0])
                 dpg.add_static_texture(color_circle_square.width, color_circle_square.height, img_np, tag=square_tex_tag)
                 square_tex_disposables.append(square_tex_tag)
 
@@ -293,20 +293,37 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
     Sizes = comboItem.ColorListSize
 
     match format:
-        case Formats.RGB:
-            color_str = "({:>3},{:>3},{:>3})".format(*item.color.rgb)
-        case Formats.HSV:
-            color_str = "({:>3},{:>3},{:>3})".format(*item.color.hsv)
-        case Formats.HLS:
-            color_str = "({:>3},{:>3},{:>3})".format(*item.color.hls)
+        case Formats.HSV_255:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value("hsv", 255))
+        case Formats.HSV_360_255:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value_h_others("hsv", 360, 255))
+        case Formats.HSV_100:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value("hsv", 100))
+        case Formats.HSV_360_100:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value_h_others("hsv", 360, 100))
+        case Formats.HLS_255:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value("hls", 255))
+        case Formats.HLS_360_255:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value_h_others("hls", 360, 255))
+        case Formats.HLS_100:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value("hls", 100))
+        case Formats.HLS_360_100:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value_h_others("hls", 360, 100))
+        case Formats.RGB_255:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value("rgb", 255))
+        case Formats.RGB_100:
+            color_str = "({:>3},{:>3},{:>3})".format(*item.color.get_value("rgb", 100))
+        case _:
+            color_str = "!?"
+            raise RuntimeError(f"Unknown color space!: {format}")
     if size != Sizes.S and size != Sizes.XS:
-        if format == Formats.RGB:
-            color_str += "\n   hsv({:>3},{:>3},{:>3})".format(*item.color.hsv)
+        if comboItem.isFormatRGB(format):
+            color_str += "\n   hsv255({:>3},{:>3},{:>3})".format(*item.color.get_value("hsv",255))
         else :
-            color_str += "\n   rgb({:>3},{:>3},{:>3})".format(*item.color.rgb)
+            color_str += "\n   rgb255({:>3},{:>3},{:>3})".format(*item.color.get_value("rgb",255))
 
         if size != Sizes.M:
-            color_str += "\n   luma({:>3})".format(round(item.color.luma))
+            color_str += "\n   luma255({:>3})".format(round(item.color.luma))
 
     match size:
         # size: [foreground, background]
@@ -325,14 +342,14 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
             dpg.add_text("#{:>2}".format(item_index+1))
             if size != Sizes.XS:
                 dpg.add_checkbox(callback=on_select_color_item_checkbox, user_data=item_index, default_value=pickedColorState.selected[item_index], tag=f"{TagItem.CHKBOX_COLORLIST_SELECT_}{item_index}")
-        if format == Formats.HLS:
-            dpg.add_color_picker(default_value=item.color.rgba, width=height_px*1.4, height=height_px*1.4, picker_mode=dpg.mvColorPicker_wheel, no_side_preview=True, no_alpha=True, no_inputs=True)
+        if comboItem.isFormatHLS(format):
+            dpg.add_color_picker(default_value=item.color.get_value("rgba", 255), width=height_px*1.4, height=height_px*1.4, picker_mode=dpg.mvColorPicker_wheel, no_side_preview=True, no_alpha=True, no_inputs=True)
         else:
             with dpg.drawlist(width=height_px, height=height_px):
                 # カラーサークル
                 dpg.draw_image(TagTexture.COLORCIRCLE_CIRCLE, (0,0), (height_px, height_px))
                 center = height_px / 2.0
-                hue_degree_f = ((item.color.hsv[0] + 21.2499999999992) % 255) / 255.0 # ClipStudioのサークルは30度時計回りにシフトしてるっぽい...? ただしここでは一周360ではなく255なので30という数字をそのまま使うとズレる
+                hue_degree_f = ((item.color.get_value("hsv",255)[0] + 21.2499999999992) % 255) / 255.0 # ClipStudioのサークルは30度時計回りにシフトしてるっぽい...? ただしここでは一周360ではなく255なので30という数字をそのまま使うとズレる
                 hue_x = center + center * -math.cos(hue_degree_f * 2 * math.pi)
                 hue_y = center + center * -math.sin(hue_degree_f * 2 * math.pi)
                 dpg.draw_line((center,center), (hue_x, hue_y), color=(85,85,85), thickness=circle_thickness[1])
@@ -342,13 +359,13 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
                 square_min = height_px * 0.22432432432432 # サークルと四角分離・余白削除前に四角がどこにあったかというと、83,83 から 284,284の範囲内
                 square_max = height_px * 0.76756756756757 # これらをサークルの大きさである370で割る...
                 dpg.draw_image(square_tex_tag, (square_min,square_min), (square_max,square_max))
-                line_x = square_min + ((square_max - square_min) * (item.color.hsv[1] / 255.0))
-                line_y = square_min + ((square_max - square_min) * ((255 - item.color.hsv[2]) / 255.0))
+                line_x = square_min + ((square_max - square_min) * (item.color.get_value("hsv",255)[1] / 255.0))
+                line_y = square_min + ((square_max - square_min) * ((255 - item.color.get_value("hsv",255)[2]) / 255.0))
                 dpg.draw_circle((line_x, line_y), circle_radius[1], color=(85,85,85))
                 dpg.draw_circle((line_x, line_y), circle_radius[0], color=(255,255,255))
         with dpg.drawlist(width=20, height=height_px):
             # 色、luma
-            dpg.draw_rectangle((0,0), (10,height_px), color=[45]*3, fill=item.color.rgba)
+            dpg.draw_rectangle((0,0), (10,height_px), color=[45]*3, fill=item.color.get_value("rgba", 255))
             dpg.draw_rectangle((10,0), (20,height_px), color=[45]*3, fill=([item.color.luma]*3))
         with dpg.group():
             # 座標、HEX、色コード
@@ -468,10 +485,16 @@ with dpg.window(tag=TagWindow.PRIMARY):#描画スペースの中にwindowを作�
             # 左パネル
             with dpg.child_window(border=False):
                 with dpg.group(horizontal=True):
-                        dpg.add_button(label="Load", callback=reflesh_loaded_image)
-                        dpg.add_text("|") # spacing
-                        dpg.add_combo([e.value for e in comboItem.ImageColormode], default_value=comboItem.ImageColormode.COLOR.value, callback=display_image, tag=TagItem.COMBO_IMAGE_COLORMODE, fit_width=True)
-                        dpg.add_text("v0.4", color=[150,200,255], tag=TagItem.TEXT_LOADED_IMAGE_DETAIL)
+                    dpg.add_button(label="Load", callback=reflesh_loaded_image)
+                    dpg.add_text("|")
+                    dpg.add_combo([e.value for e in comboItem.ImageColormode], default_value=comboItem.ImageColormode.COLOR.value, callback=display_image, tag=TagItem.COMBO_IMAGE_COLORMODE, fit_width=True)
+                    dpg.add_text("|")
+                    dpg.add_input_text(width=40, tag=TagItem.INPUT_MANUAL_X, hint="0", on_enter=True, callback=on_add_color_manual)
+                    dpg.add_text(",")
+                    dpg.add_input_text(width=40, tag=TagItem.INPUT_MANUAL_Y, hint="0", on_enter=True, callback=on_add_color_manual)
+                    dpg.add_button(label="Add", callback=on_add_color_manual)
+                with dpg.group(horizontal=True):
+                    dpg.add_text("v0.4", color=[150,200,255], tag=TagItem.TEXT_LOADED_IMAGE_DETAIL)
                 with dpg.child_window(tag=TagWindow.IMAGE, border=False) as window_image:
                     with dpg.group(tag=TagGroup.LOADING_INFO):
                         dpg.add_text("To display copied image:\n  - Click the \"Load\" button above\n  - Press Ctrl+V (tips: release V first)\n\n", tag=TagItem.TEXT_LOAD_STAT)
@@ -480,12 +503,8 @@ with dpg.window(tag=TagWindow.PRIMARY):#描画スペースの中にwindowを作�
             with dpg.child_window(border=False, auto_resize_x=True):
                 with dpg.group():
                     with dpg.group(horizontal=True):
-                        dpg.add_input_text(width=40, tag=TagItem.INPUT_MANUAL_X, hint="0", on_enter=True, callback=on_add_color_manual)
-                        dpg.add_text(",")
-                        dpg.add_input_text(width=40, tag=TagItem.INPUT_MANUAL_Y, hint="0", on_enter=True, callback=on_add_color_manual)
-                        dpg.add_button(label="Add", callback=on_add_color_manual)
-                        dpg.add_text("|")
-                        dpg.add_combo([e.value for e in comboItem.ColorFormat], default_value=comboItem.ColorFormat.HSV.value, tag=TagItem.COMBO_COLORFORMAT, fit_width=True, callback=reflesh_color_list)
+                    
+                        dpg.add_combo([e.value for e in comboItem.ColorFormat], default_value=comboItem.ColorFormat.HSV_255.value, tag=TagItem.COMBO_COLORFORMAT, fit_width=True, height_mode=dpg.mvComboHeight_Largest, callback=reflesh_color_list)
                         dpg.add_combo([e.value for e in comboItem.ColorListSize], default_value=comboItem.ColorListSize.M.value, tag=TagItem.COMBO_COLORLIST_SIZE, fit_width=True, callback=reflesh_color_list)
                         
                     with dpg.group(horizontal=True):
@@ -585,7 +604,8 @@ def handle_click(sender, app_data, user_data):
             int(dpg.get_item_configuration(TagItem.INPUT_MANUAL_X)["hint"]),
             int(dpg.get_item_configuration(TagItem.INPUT_MANUAL_Y)["hint"])
         )
-        picked = pickedColorState.Picked(clicked_image_pos, imageState.image_color.getpixel(clicked_image_pos))
+        color_nomalized = tuple(map(lambda v: v/255, imageState.image_color.getpixel(clicked_image_pos)))
+        picked = pickedColorState.Picked(clicked_image_pos, color_nomalized)
         pickedColorState.append(picked, True)
         reflesh_color_list()
         display_point_indicator()
