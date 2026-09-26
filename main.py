@@ -3,20 +3,29 @@
 import dearpygui.dearpygui as dpg
 import numpy as np
 from PIL import ImageGrab, Image, UnidentifiedImageError
-import time, pyperclip, pathlib, math
+import time, pyperclip, pathlib, math, argparse
 
 from tag import TagItem, TagTexture, TagWindow, TagHandler, TagGroup, TagDrawLayer
 import pickedColorState, imageState, comboItem, colorCircleSquare
 
-dpg.create_context()
-# dpg.show_item_registry()
-dpg.create_viewport(title="Multi-selectable image color eyedropper(MSICE) v0.4", width=800, height=680)
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument("--rotate-circle", default=0.0, help="Specifies the rotation offset of the color wheel in HSV and RGB display modes. In degrees, counter clockwise.")
+
+args = arg_parser.parse_args()
 
 # Dear PyGuiのカラーサークルは三角かつ色相の角度が気に入らない
 # このため自作する。サークルは色が変わらないので事前ロードできるが、
 # 明度彩度については色が変わるので、彩度シフトできる状態で保持する必要がある
 color_circle_square = colorCircleSquare.colorCircleSquare("assets/square2.png")
+color_circle_rotate_offset = float(args.rotate_circle) # Pillowのrotateに従う。反時計回り。画像自体は10時の位置が色相0度であることに留意
 square_tex_disposables = [] # テクスチャ破棄候補タグリスト
+
+if color_circle_rotate_offset != 0.0:
+    print(f"color wheel rotation offset: {args.rotate_circle}")
+
+dpg.create_context()
+# dpg.show_item_registry()
+dpg.create_viewport(title="Multi-selectable image color eyedropper(MSICE) v0.4", width=800, height=680)
 
 
 # 画像側処理
@@ -349,7 +358,8 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
                 # カラーサークル
                 dpg.draw_image(TagTexture.COLORCIRCLE_CIRCLE, (0,0), (height_px, height_px))
                 center = height_px / 2.0
-                hue_degree_f = ((item.color.get_value("hsv",255)[0] + 21.2499999999992) % 255) / 255.0 # ClipStudioのサークルは30度時計回りにシフトしてるっぽい...? ただしここでは一周360ではなく255なので30という数字をそのまま使うとズレる
+                hue_degree_360 = item.color.get_value("hsv",255)[0] / 255.0 * 360 + 30 - color_circle_rotate_offset # デフォで30度(10時の位置)の回転がかかっている
+                hue_degree_f = hue_degree_360 / 360.0
                 hue_x = center + center * -math.cos(hue_degree_f * 2 * math.pi)
                 hue_y = center + center * -math.sin(hue_degree_f * 2 * math.pi)
                 dpg.draw_line((center,center), (hue_x, hue_y), color=(85,85,85), thickness=circle_thickness[1])
@@ -394,6 +404,7 @@ def update_color_list_checkbox():
 
 with dpg.texture_registry():
     img = Image.open("assets/circle.png")
+    img = img.rotate(color_circle_rotate_offset)
     img_np = np.array(img, dtype=np.float32)
     img_np /= 255.0
     dpg.add_static_texture(tag=TagTexture.COLORCIRCLE_CIRCLE, default_value=img_np.ravel(), width=img.width, height=img.height)
