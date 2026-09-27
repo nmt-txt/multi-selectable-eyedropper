@@ -23,9 +23,12 @@ square_tex_disposables = [] # テクスチャ破棄候補タグリスト
 if color_circle_rotate_offset != 0.0:
     print(f"color wheel rotation offset: {args.rotate_circle}")
 
+SOFTWARE_TITLE = "Multi-selectable image color eyedropper(MSICE)"
+SOFTWARE_VER = "v0.5"
+
 dpg.create_context()
 # dpg.show_item_registry()
-dpg.create_viewport(title="Multi-selectable image color eyedropper(MSICE) v0.4", width=800, height=680)
+dpg.create_viewport(title=f"{SOFTWARE_TITLE} {SOFTWARE_VER}", width=800, height=680)
 
 
 # 画像側処理
@@ -505,7 +508,7 @@ with dpg.window(tag=TagWindow.PRIMARY):#描画スペースの中にwindowを作�
                     dpg.add_input_text(width=40, tag=TagItem.INPUT_MANUAL_Y, hint="0", on_enter=True, callback=on_add_color_manual)
                     dpg.add_button(label="Add", callback=on_add_color_manual)
                 with dpg.group(horizontal=True):
-                    dpg.add_text("v0.4", color=[150,200,255], tag=TagItem.TEXT_LOADED_IMAGE_DETAIL)
+                    dpg.add_text(f"{SOFTWARE_VER}", color=[150,200,255], tag=TagItem.TEXT_LOADED_IMAGE_DETAIL)
                 with dpg.child_window(tag=TagWindow.IMAGE, border=False) as window_image:
                     with dpg.group(tag=TagGroup.LOADING_INFO):
                         dpg.add_text("To display copied image:\n  - Click the \"Load\" button above\n  - Press Ctrl+V (tips: release V first)\n\n", tag=TagItem.TEXT_LOAD_STAT)
