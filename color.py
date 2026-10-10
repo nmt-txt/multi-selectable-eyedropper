@@ -21,8 +21,7 @@ class Color:
         self.hsv = colorsys.rgb_to_hsv(*rgb)
         self.hls = colorsys.rgb_to_hls(*rgb)
         self.hex = "{:02x}{:02x}{:02x}".format(*map(lambda v: round(v*255), rgb)).upper()
-        # ITU-R 601-2 luma
-        self.luma = rgb[0] * 255 * 299/1000 + rgb[1] * 255 * 587/1000 + rgb[2] * 255 * 114/1000
+        self.luma = calc_luma(rgb) 
 
     def get_value(self, target, max):
         """最大値を指定して各値を取得する
@@ -77,3 +76,16 @@ class Color:
                 return (round(self.hls[0] * h_max), *map(lambda v: round(v * others_max), self.hls[1:]))
             case _:
                 raise ValueError(f"\"target\" must be hsv or hls: {target}")
+
+def calc_luma(rgb_f):
+    """RGBからluma値を計算する
+
+    ITU-R 601-2 luma
+
+    Args:
+        rgb_f(tuple(float)): RGB。0~1のfloat
+    
+    Returns:
+        float: Luma値。
+    """
+    return (rgb_f[0] * 255 * 299/1000 + rgb_f[1] * 255 * 587/1000 + rgb_f[2] * 255 * 114/1000) / 255

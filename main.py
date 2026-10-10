@@ -243,7 +243,7 @@ def display_point_indicator():
             dpg.draw_circle(pos_draw, 3, color=(255,255,255), parent=TagDrawLayer.POINT_INDICATOR)
             pos_text = (pos_draw[0]+10, pos_draw[1]-8)
 
-            color_f = 0 if item.color.luma > 127 else 255
+            color_f = 0 if item.color.luma >= .5 else 255
             color_b = 255 - color_f
             text = f"#{i+1}"
 
@@ -335,7 +335,7 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
             color_str += "\n   rgb255({:>3},{:>3},{:>3})".format(*item.color.get_value("rgb",255))
 
         if size != Sizes.M:
-            color_str += "\n   luma255({:>3})".format(round(item.color.luma))
+            color_str += "\n   luma255({:>3})".format(round(item.color.luma * 255))
 
     match size:
         # size: [foreground, background]
@@ -379,7 +379,7 @@ def display_color_list_item(item_index, item, size, format, parent, square_tex_t
         with dpg.drawlist(width=20, height=height_px):
             # 色、luma
             dpg.draw_rectangle((0,0), (10,height_px), color=[45]*3, fill=item.color.get_value("rgba", 255))
-            dpg.draw_rectangle((10,0), (20,height_px), color=[45]*3, fill=([item.color.luma]*3))
+            dpg.draw_rectangle((10,0), (20,height_px), color=[45]*3, fill=([item.color.luma*255]*3))
         with dpg.group():
             # 座標、HEX、色コード
             if size != Sizes.XS:
