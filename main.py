@@ -24,7 +24,7 @@ if color_circle_rotate_offset != 0.0:
     print(f"color wheel rotation offset: {args.rotate_circle}")
 
 SOFTWARE_TITLE = "Multi-selectable image color eyedropper(MSICE)"
-SOFTWARE_VER = "v0.5"
+SOFTWARE_VER = "v0.6"
 
 COLOR_PREV_RECT_MIN_SIZE = 20
 
