@@ -18,6 +18,7 @@ class TagItem(StrEnum):
     INPUT_MANUAL_X = auto()
     INPUT_MANUAL_Y = auto()
     TABLE_LIST_COLUMN = auto()
+    DRAW_COLOR_PREV_RECT = auto()
 
 class TagTexture(StrEnum):
     @staticmethod
@@ -35,6 +36,7 @@ class TagDrawLayer(StrEnum):
         return f"DLAYER_{name.lower()}"
     
     POINT_INDICATOR = auto()
+    COLOR_PREVIEW = auto()
 
 class TagWindow(StrEnum):
     @staticmethod

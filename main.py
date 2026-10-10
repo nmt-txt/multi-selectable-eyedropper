@@ -6,14 +6,14 @@ from PIL import ImageGrab, Image, UnidentifiedImageError
 import time, pyperclip, pathlib, math, argparse
 
 from tag import TagItem, TagTexture, TagWindow, TagHandler, TagGroup, TagDrawLayer
-import pickedColorState, imageState, comboItem, colorCircleSquare
+import pickedColorState, imageState, comboItem, colorCircleSquare, color
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--rotate-circle", default=0.0, help="Specifies the rotation offset of the color wheel in HSV and RGB display modes. In degrees, counter clockwise.")
 
 args = arg_parser.parse_args()
 
-# Dear PyGuiのカラーサークルは三角かつ色相の角度が気に入らない
+# Dear PyGuiのカラーサークルは三角固定かつその三角が回転するのが気に入らない
 # このため自作する。サークルは色が変わらないので事前ロードできるが、
 # 明度彩度については色が変わるので、彩度シフトできる状態で保持する必要がある
 color_circle_square = colorCircleSquare.colorCircleSquare("assets/square2.png")
@@ -25,6 +25,8 @@ if color_circle_rotate_offset != 0.0:
 
 SOFTWARE_TITLE = "Multi-selectable image color eyedropper(MSICE)"
 SOFTWARE_VER = "v0.5"
+
+COLOR_PREV_RECT_MIN_SIZE = 20
 
 dpg.create_context()
 # dpg.show_item_registry()
@@ -181,6 +183,9 @@ def display_image():
                 dpg.draw_image(should_display_tag, start, end, uv_min=(0,0), uv_max=(1,1), tag=TagItem.IMAGE_IMAGE)
             with dpg.draw_layer(tag=TagDrawLayer.POINT_INDICATOR):
                 pass
+            with dpg.draw_layer():
+                # ↓pmin, pmaxはカーソル移動時に変更されるためここの値は無意味。ここでは四角が存在するだけで十分
+                dpg.draw_rectangle((0,0), (1,1), show=False, tag=TagItem.DRAW_COLOR_PREV_RECT)
     else :
         dpg.configure_item(TagItem.IMAGE_DRAWLIST, width=available_size[0], height=available_size[1])
         dpg.configure_item(TagItem.IMAGE_IMAGE, texture_tag = should_display_tag, pmin=start ,pmax=end)
@@ -544,6 +549,7 @@ def handle_resize(sender, app_data, user_data):
 
 def handle_move(sender, app_data, user_data):
     if dpg.does_item_exist(TagItem.IMAGE_DRAWLIST) and dpg.is_item_hovered(TagItem.IMAGE_DRAWLIST):
+        # Update hovered pos input box
         offset = dpg.get_item_rect_min(TagItem.IMAGE_DRAWLIST) # DrawListは若干ズレて配置されている?
 
         available_size = dpg.get_item_rect_size(window_image)
@@ -552,15 +558,37 @@ def handle_move(sender, app_data, user_data):
 
         x_align_offset = max(available_size[0], preferred_size[0]) - preferred_size[0]
 
-        mouse_pos = (app_data[0]-x_align_offset, app_data[1])
+        mouse_pos_on_image = (app_data[0] - x_align_offset - offset[0], app_data[1] - offset[1])
 
         restored_pos = (
-            max(0, min(round((mouse_pos[0]-offset[0])/image_resized_scale), texture_size[0]-1)),
-            max(0, min(round((mouse_pos[1]-offset[1])/image_resized_scale), texture_size[1]-1))
+            max(0, min(round(mouse_pos_on_image[0]/image_resized_scale), texture_size[0]-1)),
+            max(0, min(round(mouse_pos_on_image[1]/image_resized_scale), texture_size[1]-1))
         )
 
         dpg.configure_item(TagItem.INPUT_MANUAL_X, hint=restored_pos[0])
         dpg.configure_item(TagItem.INPUT_MANUAL_Y, hint=restored_pos[1])
+
+        # Update color preview rectangle
+        # 色プレビュー四角は、画像の3.5%サイズかCOLOR_PREV_RECT_MIN_SIZE。3.5%は感覚で決めた
+        rect_size = max(min(preferred_size) * 0.035, COLOR_PREV_RECT_MIN_SIZE)
+        color_255 = imageState.image_color.getpixel(restored_pos)
+        luma = color.calc_luma(tuple(map(lambda v: v/255, color_255)))
+        pmin = (
+            mouse_pos_on_image[0] + x_align_offset - (rect_size + 5 if mouse_pos_on_image[0] > rect_size else -rect_size),
+            mouse_pos_on_image[1] - (rect_size + 5 if mouse_pos_on_image[1] > rect_size else -rect_size)
+        )
+        
+        dpg.configure_item(TagItem.DRAW_COLOR_PREV_RECT, 
+                           pmin = pmin,
+                           pmax = tuple(map(lambda v: v + rect_size, pmin)), 
+                           fill = color_255, 
+                           color = [0 if luma >= .5 else 255] * 3,
+                           show = True
+        )
+
+    else:
+        if dpg.does_item_exist(TagItem.DRAW_COLOR_PREV_RECT):
+            dpg.configure_item(TagItem.DRAW_COLOR_PREV_RECT, show=False)
         
 
 def handle_mouse_wheel(sender, app_data, user_data):
